@@ -1,14 +1,14 @@
-import { email, type Input, minLength, object, string } from "valibot";
+import { z } from "zod";
 
-export const SignInSchema = object({
-  email: string([
-    minLength(1, "Please enter your email."),
-    email("The email address is badly formatted."),
-  ]),
-  password: string([
-    minLength(1, "Please enter your password."),
-    minLength(8, "Your password must have 8 characters or more."),
-  ]),
+export const SignInSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Please enter your email." })
+    .email({ message: "The email address is badly formatted." }),
+  password: z
+    .string()
+    .min(1, { message: "Please enter your password." })
+    .min(8, { message: "Your password must have 8 characters or more." }),
 });
 
-export type SignInSchema = Input<typeof SignInSchema>;
+export type SignInSchema = z.infer<typeof SignInSchema>;

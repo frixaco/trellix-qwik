@@ -1,18 +1,47 @@
 import { component$ } from "@builder.io/qwik";
 import type { DocumentHead } from "@builder.io/qwik-city";
-import { Link } from "@builder.io/qwik-city";
-import { useFormAction, useFormLoader } from "./layout";
-import { useForm, valiForm$ } from "@modular-forms/qwik";
+import { Form, Link } from "@builder.io/qwik-city";
+import { routeAction$, zod$ } from "@builder.io/qwik-city";
 import { SignInSchema } from "~/components/sign-in-form";
+import { db } from "~/database/connection";
+import { users } from "../../../drizzle/schema";
+import { eq } from "drizzle-orm";
+
+export const useSignInAction = routeAction$(
+  async (values, { redirect, cookie, fail }) => {
+    // const result = await db.user.findUnique({
+    //   where: values,
+    // });
+    const response = await db
+      .select({
+        email: users.email,
+        password: users.password,
+      })
+      .from(users)
+      .where(eq(users.email, values.email))
+      .execute();
+    const result = response[0];
+
+    if (response.length === 0) {
+      fail(401, {
+        message: "Invalid email or password",
+      });
+      return;
+    }
+
+    cookie.set("auth", result.email, {
+      path: "/",
+      domain: "localhost",
+      expires: new Date(Date.now() + 1000 * 60 * 15),
+    });
+
+    redirect(308, "/home");
+  },
+  zod$(SignInSchema),
+);
 
 export default component$(() => {
-  const [{ submitting }, { Form, Field }] = useForm<SignInSchema>({
-    loader: useFormLoader(),
-    action: useFormAction(),
-    validate: valiForm$(SignInSchema),
-  });
-
-  const { isRunning, submit: handleSubmit, value } = useFormAction();
+  const action = useSignInAction();
 
   return (
     <main class="flex h-full flex-col items-center justify-center bg-cyan-900">
@@ -22,62 +51,45 @@ export default component$(() => {
         </h1>
 
         <Form
-          onSubmit$={handleSubmit}
+          action={action}
           class="flex flex-col items-stretch justify-between gap-4 rounded-lg bg-gray-800 p-10 px-12 drop-shadow-md"
         >
-          <Field name="email">
-            {(field, props) => (
-              <div class="flex flex-col">
-                <label for="signin-email" class="pb-1 text-base text-cyan-200">
-                  Email
-                </label>
+          <div class="flex flex-col">
+            <label for="signin-email" class="pb-1 text-base text-cyan-200">
+              Email
+            </label>
 
-                <input
-                  {...props}
-                  id="signin-email"
-                  type="email"
-                  class="rounded bg-cyan-800 px-4 py-2 outline-none ring-1 ring-inset focus:ring-2 focus:ring-yellow-300"
-                  value={field.value}
-                />
-                {(field.error || value?.errors.email) && (
-                  <div class="text-sm font-semibold text-red-600">
-                    {field.error || value?.errors.email}
-                  </div>
-                )}
-              </div>
-            )}
-          </Field>
+            <input
+              id="signin-email"
+              type="email"
+              class="rounded bg-cyan-800 px-4 py-2 outline-none ring-1 ring-inset focus:ring-2 focus:ring-yellow-300"
+            />
+            <div class="text-sm font-semibold text-red-600">
+              {action.value?.failed && <p>{action.value.fieldErrors.email}</p>}
+            </div>
+          </div>
 
-          <Field name="password">
-            {(field, props) => (
-              <div class="flex flex-col pb-4">
-                <label
-                  for="signin-password"
-                  class="pb-1 text-base text-cyan-200"
-                >
-                  Password
-                </label>
+          <div class="flex flex-col pb-4">
+            <label for="signin-password" class="pb-1 text-base text-cyan-200">
+              Password
+            </label>
 
-                <input
-                  {...props}
-                  id="signin-password"
-                  type="password"
-                  class="rounded bg-cyan-800 px-4 py-2 outline-none ring-1 ring-inset focus:ring-2 focus:ring-yellow-300"
-                  value={field.value}
-                />
-                {(field.error || value?.errors.password) && (
-                  <div class="text-sm font-semibold text-red-600">
-                    {field.error || value?.errors.password}
-                  </div>
-                )}
-              </div>
-            )}
-          </Field>
+            <input
+              id="signin-password"
+              type="password"
+              class="rounded bg-cyan-800 px-4 py-2 outline-none ring-1 ring-inset focus:ring-2 focus:ring-yellow-300"
+            />
+            <div class="text-sm font-semibold text-red-600">
+              {action.value?.failed && (
+                <p>{action.value.fieldErrors.password}</p>
+              )}
+            </div>
+          </div>
 
           <button
             class="rounded-lg bg-cyan-700 p-4 font-bold tracking-wide text-white outline-none ring-1 ring-inset hover:drop-shadow-md focus:ring-2 focus:ring-yellow-300"
             type="submit"
-            disabled={isRunning || submitting}
+            disabled={action.isRunning}
           >
             Sign In
           </button>

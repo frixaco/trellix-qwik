@@ -6,6 +6,8 @@ import {
   type RequestHandler,
 } from "@builder.io/qwik-city";
 import { db } from "~/database/connection";
+import { boards, users } from "../../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 export const onRequest: RequestHandler = async ({
   next,
@@ -27,12 +29,26 @@ export const useCreateBoard = routeAction$(
     console.log("useCreateBoard", form);
     const { boardName, userId } = form;
 
-    await db.board.create({
-      data: {
+    // await db.board.create({
+    //   data: {
+    //     name: boardName,
+    //     userId: parseInt(userId, 10),
+    //   },
+    // });
+
+    const newBoard = await db
+      .insert(boards)
+      .values({
         name: boardName,
-        userId: parseInt(userId, 10),
-      },
-    });
+        authorId: parseInt(userId, 10),
+      })
+      .returning({
+        name: boards.name,
+        userId: boards.authorId,
+      })
+      .execute();
+
+    return newBoard;
   },
   zod$({
     boardName: z.string().min(1, "Board name should not be empty."),
@@ -44,11 +60,16 @@ export const useUserBoards = routeLoader$(async ({ resolveValue }) => {
   console.log("useUserBoards");
   const user = await resolveValue(useAuthUser);
 
-  const userBoards = await db.board.findMany({
-    where: {
-      userId: user.id,
-    },
-  });
+  // const userBoards = await db.board.findMany({
+  //   where: {
+  //     userId: user.id,
+  //   },
+  // });
+  const userBoards = await db
+    .select()
+    .from(boards)
+    .where(eq(boards.authorId, user.id))
+    .execute();
 
   return userBoards;
 });
@@ -58,13 +79,20 @@ export const useAuthUser = routeLoader$(async ({ cookie, redirect }) => {
   const authCookie = cookie.get("auth");
 
   if (authCookie) {
-    const user = await db.user.findUnique({
-      where: {
-        email: authCookie.value,
-      },
-    });
+    // const user = await db.user.findUnique({
+    //   where: {
+    //     email: authCookie.value,
+    //   },
+    // });
 
-    if (user == null) {
+    const response = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, authCookie.value))
+      .execute();
+    const user = response[0];
+
+    if (response.length === 0) {
       throw redirect(301, "/signin");
     }
 

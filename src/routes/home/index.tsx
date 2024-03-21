@@ -58,7 +58,7 @@ export default component$(() => {
 
         <div>
           {boards.map((board) => (
-            <div key={board.created.toISOString()}>
+            <div key={board.createdAt.toISOString()}>
               <span class="text-black">{board.name}</span>
             </div>
           ))}
