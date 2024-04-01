@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 
 export const useSignInAction = routeAction$(
   async (values, { redirect, cookie, fail }) => {
+    console.log("values", values);
     // const result = await db.user.findUnique({
     //   where: values,
     // });
@@ -62,6 +63,7 @@ export default component$(() => {
             <input
               id="signin-email"
               type="email"
+              name="email"
               class="rounded bg-cyan-800 px-4 py-2 outline-none ring-1 ring-inset focus:ring-2 focus:ring-yellow-300"
             />
             <div class="text-sm font-semibold text-red-600">
@@ -77,6 +79,7 @@ export default component$(() => {
             <input
               id="signin-password"
               type="password"
+              name="password"
               class="rounded bg-cyan-800 px-4 py-2 outline-none ring-1 ring-inset focus:ring-2 focus:ring-yellow-300"
             />
             <div class="text-sm font-semibold text-red-600">

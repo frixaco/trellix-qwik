@@ -1,12 +1,23 @@
 import { component$ } from "@builder.io/qwik";
-import { Form, Link } from "@builder.io/qwik-city";
+import { Form, routeAction$ } from "@builder.io/qwik-city";
 import { useAuthUser, useCreateBoard, useUserBoards } from "./layout";
+
+export const useSignOut = routeAction$(async (_, { cookie, redirect }) => {
+  console.log("ACTION: SIGN OUT");
+
+  cookie.delete("auth", {
+    path: "/",
+  });
+
+  redirect(301, "/signin");
+});
 
 export default component$(() => {
   const { value: user } = useAuthUser();
   const { value: boards } = useUserBoards();
 
   const action = useCreateBoard();
+  const signOut = useSignOut();
 
   return (
     <main class="flex h-full min-h-0 flex-col items-stretch justify-start">
@@ -16,13 +27,14 @@ export default component$(() => {
           <span>a Qwik demo</span>
         </div>
 
-        <Link
-          href="/signout"
-          role="button"
-          class="cursor-pointer rounded-lg bg-gray-900 px-8 py-4 text-cyan-400 hover:underline"
-        >
-          Sign Out
-        </Link>
+        <Form action={signOut}>
+          <button
+            role="button"
+            class="cursor-pointer rounded-lg bg-gray-900 px-8 py-4 text-cyan-400 hover:underline"
+          >
+            Sign Out
+          </button>
+        </Form>
       </div>
 
       <div class="h-full min-h-0 flex-grow bg-cyan-100 p-8 text-lg font-semibold text-gray-800">

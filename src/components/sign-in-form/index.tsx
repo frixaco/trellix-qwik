@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@builder.io/qwik-city";
 
 export const SignInSchema = z.object({
   email: z
@@ -8,7 +8,7 @@ export const SignInSchema = z.object({
   password: z
     .string()
     .min(1, { message: "Please enter your password." })
-    .min(8, { message: "Your password must have 8 characters or more." }),
+    .min(6, { message: "Your password must have 6 characters or more." }),
 });
 
 export type SignInSchema = z.infer<typeof SignInSchema>;

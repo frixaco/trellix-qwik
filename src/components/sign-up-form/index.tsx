@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@builder.io/qwik-city";
 
 export const SignUpSchema = z.object({
   email: z
